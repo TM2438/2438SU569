@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西宮すごろく - ポータル</title>
+    <!-- Markdown変換ライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: #f7f9fc;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: #fff;
+            padding: 30px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 26px;
+            margin-bottom: 8px;
+        }
+        p.subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .version-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .version-card {
+            display: block;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 18px 20px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease;
+            text-align: left;
+            position: relative;
+            cursor: pointer;
+        }
+        .version-card:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+        }
+        .version-card.primary {
+            border-color: #3498db;
+            background: #f0f7fc;
+        }
+        .version-card.rule {
+            border-color: #2ecc71;
+            background: #f0fdf4;
+        }
+        .version-card.disabled {
+            opacity: 0.6;
+            pointer-events: none;
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+        .tag {
+            display: inline-block;
+            background: #3498db;
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+        .tag.rule-tag {
+            background: #2ecc71;
+        }
+        .tag.dev {
+            background: #e67e22;
+        }
+        .version-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        .version-desc {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        .arrow {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: #94a3b8;
+        }
+        footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        /* モーダル表示スタイル */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .modal-content {
+            background: #fff;
+            width: 100%;
+            max-width: 700px;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        .modal-body {
+            overflow-y: auto;
+            text-align: left;
+            line-height: 1.7;
+            font-size: 15px;
+            padding-right: 10px;
+        }
+        .modal-body h1, .modal-body h2, .modal-body h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 6px;
+        }
+        .modal-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ecf0f1;
+            text-align: right;
+        }
+        .btn-close {
+            background-color: #95a5a6;
+            color: white;
+            padding: 10px 25px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-close:hover {
+            background-color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🗺️ 西宮すごろく</h1>
+        <p class="subtitle">メニューを選択してください</p>
+
+        <div class="version-list">
+            <!-- ルールブック表示ボタン -->
+            <div class="version-card rule" onclick="openRuleModal()">
+                <span class="tag rule-tag">ガイド</span>
+                <div class="version-title">📖 ゲームルールブック</div>
+                <div class="version-desc">「西宮すごろく」の遊び方、季節チェンジ、ポイントルールを確認</div>
+                <span class="arrow">➔</span>
+            </div>
+
+            <!-- 現行アプリ（SUGOROKU.html）へのリンク -->
+            <a href="SUGOROKU.html" class="version-card primary">
+                <span class="tag">最新版</span>
+                <div class="version-title">📱 クイック参照アプリ (Ver 1.0)</div>
+                <div class="version-desc">みやたんポイント(MP)抽選・ランダムうんちく・MAPリンク対応</div>
+                <span class="arrow">➔</span>
+            </a>
+
+            <!-- 将来の拡張用 -->
+            <a href="#" class="version-card disabled">
+                <span class="tag dev">準備中</span>
+                <div class="version-title">新機能お試し版 (Ver 2.0)</div>
+                <div class="version-desc">開発中の新機能や追加ルールをテストするためのバージョン</div>
+                <span class="arrow">➔</span>
+            </a>
+        </div>
+
+        <footer>
+            &copy; 西宮すごろくプロジェクト
+        </footer>
+    </div>
+
+    <!-- ルールブック閲覧モーダル -->
+    <div id="ruleModal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="ruleContent" class="modal-body">
+                ルールブックを読み込み中...
+            </div>
+            <div class="modal-footer">
+                <button class="btn-close" onclick="closeRuleModal()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openRuleModal() {
+            const modal = document.getElementById('ruleModal');
+            const content = document.getElementById('ruleContent');
+            modal.style.display = 'flex';
+
+            fetch('00_ルールブック.md')
+                .then(response => {
+                    if (!response.ok) throw new Error('ルールブックファイルが見つかりません。');
+                    return response.text();
+                })
+                .then(mdText => {
+                    content.innerHTML = marked.parse(mdText);
+                })
+                .catch(err => {
+                    content.innerHTML = `<p style="color:#c62828; font-weight:bold;">エラー: ${err.message}</p>`;
+                });
+        }
+
+        function closeRuleModal() {
+            document.getElementById('ruleModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

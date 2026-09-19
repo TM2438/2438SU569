@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>西宮すごろく - スポット検索</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; background-color: #f7f9fc; margin: 0; padding: 15px; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 20px 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 10px; font-size: 24px; }
+        .status { text-align: center; margin-bottom: 20px; font-weight: bold; color: #7f8c8d; font-size: 14px; }
+        
+        .file-upload-area { background: #fff8e1; border: 2px dashed #ffa000; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .file-upload-area label { font-weight: bold; color: #e65100; cursor: pointer; display: inline-block; padding: 10px 20px; background: #ffe0b2; border-radius: 4px; }
+        .file-upload-area input { display: none; }
+
+        /* 3行レイアウトのラジオボタンエリア */
+        .search-area { background: #eef2f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .radio-row { background: #fff; padding: 12px 15px; border-radius: 6px; border: 1px solid #dcdfe6; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; }
+        .row-title { font-weight: bold; color: #2c3e50; width: 60px; flex-shrink: 0; border-right: 2px solid #3498db; padding-right: 10px; }
+        
+        .radio-options { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        .radio-options label { cursor: pointer; font-size: 16px; display: flex; align-items: center; gap: 6px; user-select: none; padding: 4px 0; }
+        
+        /* 押しやすい大きなボタン */
+        .btn-submit { display: block; width: 100%; background-color: #3498db; color: #fff; border: none; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.3s; margin-top: 15px; }
+        .btn-submit:hover { background-color: #2980b9; }
+        .error-msg { color: #c62828; font-weight: bold; margin-top: 15px; text-align: center; white-space: pre-wrap; line-height: 1.5; font-size: 14px; }
+
+        /* モーダルダイアログCSS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 1000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
+        .modal-content { background: #fff; width: 100%; max-width: 600px; border-radius: 10px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: fadeIn 0.2s ease-out; max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .modal-cell-tag { background: #3498db; color: #fff; font-weight: bold; padding: 4px 10px; border-radius: 4px; font-size: 16px; white-space: nowrap; }
+        .modal-title { font-size: 20px; color: #e74c3c; margin: 0; font-weight: bold; line-height: 1.3; }
+        
+        .modal-body { font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
+        .spot-desc { background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #7f8c8d; }
+        
+        .unchiku-box { background: #fff3e0; border-left: 4px solid #ff9800; padding: 12px; margin-bottom: 15px; border-radius: 0 6px 6px 0; }
+        .unchiku-title { font-weight: bold; color: #e65100; margin-bottom: 5px; }
+        
+        .mp-box { background: #e8f5e9; border: 1px solid #4caf50; padding: 12px; border-radius: 6px; margin-bottom: 20px; text-align: center; }
+        .mp-text { font-size: 16px; font-weight: bold; margin-top: 5px; }
+        .mp-gain { color: #2e7d32; }
+        .mp-lose { color: #c62828; }
+        .mp-neutral { color: #37474f; }
+
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #ecf0f1; padding-top: 15px; }
+        .btn-modal { padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; text-decoration: none; text-align: center; flex: 1; max-width: 120px; }
+        .btn-close { background-color: #95a5a6; color: white; }
+        .btn-close:hover { background-color: #7f8c8d; }
+        .btn-map { background-color: #4caf50; color: white; }
+        .btn-map:hover { background-color: #388e3c; }
+
+        /* スマホ向けレスポンシブ設定 */
+        @media screen and (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            .search-area { padding: 15px 10px; }
+            
+            /* 行を縦並びに変えて見やすくする */
+            .radio-row { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
+            .row-title { width: 100%; border-right: none; border-bottom: 2px solid #3498db; padding-bottom: 4px; padding-right: 0; }
+            
+            .radio-options { gap: 12px; }
+            .radio-options label { font-size: 18px; /* スマホではタップしやすく文字を大きく */ }
+            
+            .modal-content { padding: 20px 15px; }
+            .modal-title { font-size: 18px; }
+            .btn-submit { font-size: 20px; padding: 18px; }
+            .btn-modal { max-width: none; } /* スマホではボタンを横いっぱいに広げる */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>西宮すごろく クイック参照</h1>
+        <div id="loadingStatus" class="status">データを読み込み中...</div>
+
+        <div id="uploadArea" class="file-upload-area" style="display: none;">
+            <label for="csvFileInput">📁 CSVファイルを選択する</label>
+            <input type="file" id="csvFileInput" accept=".csv" onchange="handleFileSelect(event)">
+            <div style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">「7x7_Landmarks_With_GeoCoordinates.csv」を選択してください</div>
+        </div>
+
+        <div class="search-area">
+            <!-- 1行目：季節 -->
+            <div class="radio-row">
+                <div class="row-title">季節</div>
+                <div class="radio-options">
+                    <label><input type="radio" name="season" value="春" checked> 春</label>
+                    <label><input type="radio" name="season" value="夏"> 夏</label>
+                    <label><input type="radio" name="season" value="秋"> 秋</label>
+                    <label><input type="radio" name="season" value="冬"> 冬</label>
+                </div>
+            </div>
+
+            <!-- 2行目：列 A-G -->
+            <div class="radio-row">
+                <div class="row-title">列</div>
+                <div class="radio-options">
+                    <label><input type="radio" name="col" value="A" checked> A</label>
+                    <label><input type="radio" name="col" value="B"> B</label>
+                    <label><input type="radio" name="col" value="C"> C</label>
+                    <label><input type="radio" name="col" value="D"> D</label>
+                    <label><input type="radio" name="col" value="E"> E</label>
+                    <label><input type="radio" name="col" value="F"> F</label>
+                    <label><input type="radio" name="col" value="G"> G</label>
+                </div>
+            </div>
+
+            <!-- 3行目：行 1-7 -->
+            <div class="radio-row">
+                <div class="row-title">行</div>
+                <div class="radio-options">
+                    <label><input type="radio" name="row" value="1"> 1</label>
+                    <label><input type="radio" name="row" value="2" checked> 2</label>
+                    <label><input type="radio" name="row" value="3"> 3</label>
+                    <label><input type="radio" name="row" value="4"> 4</label>
+                    <label><input type="radio" name="row" value="5"> 5</label>
+                    <label><input type="radio" name="row" value="6"> 6</label>
+                    <label><input type="radio" name="row" value="7"> 7</label>
+                </div>
+            </div>
+
+            <button class="btn-submit" onclick="openUnchikuDialog()">OK</button>
+            <div id="errorArea" class="error-msg"></div>
+        </div>
+    </div>
+
+    <!-- モーダルダイアログ -->
+    <div id="unchikuModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modalCellTag" class="modal-cell-tag">[春-A2]</span>
+                <h2 id="modalSpotName" class="modal-title">スポット名</h2>
+            </div>
+            <div class="modal-body">
+                <div id="modalSpotDesc" class="spot-desc"></div>
+                <div class="unchiku-box">
+                    <div class="unchiku-title">【ランダムうんちく】</div>
+                    <div id="modalSpotUnchiku" style="white-space: pre-wrap;"></div>
+                </div>
+                <div class="mp-box">
+                    <!-- 名称を「みやたんポイント」に統一 -->
+                    <div class="unchiku-title" style="font-size: 13px;">【みやたんポイント(MP) イベント】</div>
+                    <div id="modalMpResult" class="mp-text"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a id="modalMapBtn" class="btn-modal btn-map" href="#" target="_blank">MAP</a>
+                <button class="btn-modal btn-close" onclick="closeUnchikuDialog()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let spotData = [];
+
+        function normalizeStr(str) {
+            if (!str) return '';
+            let halfStr = str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
+            return halfStr.replace(/\s+/g, '').toUpperCase();
+        }
+
+        function parseCSV(text) {
+            const result = [];
+            let row = [];
+            let col = "";
+            let quote = false;
+            for (let i = 0; i < text.length; i++) {
+                let cc = text[i], nc = text[i+1];
+                if (quote) {
+                    if (cc === '"' && nc === '"') { col += '"'; i++; }
+                    else if (cc === '"') { quote = false; }
+                    else { col += cc; }
+                } else {
+                    if (cc === '"') { quote = true; }
+                    else if (cc === ',') { row.push(col); col = ""; }
+                    else if (cc === '\n' || (cc === '\r' && nc === '\n')) {
+                        if (cc === '\r') i++;
+                        row.push(col); result.push(row); row = []; col = "";
+                    } else { if (cc !== '\r') col += cc; }
+                }
+            }
+            if (col !== "" || row.length > 0) { row.push(col); result.push(row); }
+            if (result.length === 0) return { data: [], headers: [] };
+            
+            let headers = result[0].map(h => h.replace(/^\uFEFF/, '').trim());
+            let objList = [];
+            for (let i = 1; i < result.length; i++) {
+                if (result[i].length === 1 && result[i][0].trim() === "") continue;
+                let obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    obj[headers[j]] = result[i][j] ? result[i][j].trim() : '';
+                }
+                objList.push(obj);
+            }
+            return { data: objList, headers: headers };
+        }
+
+        window.onload = function() {
+            fetch('7x7_Landmarks_With_GeoCoordinates.csv')
+                .then(response => {
+                    if (!response.ok) throw new Error('自動読み込みスキップ');
+                    return response.arrayBuffer();
+                })
+                .then(buffer => processBuffer(buffer))
+                .catch(() => {
+                    document.getElementById('loadingStatus').innerText = '上のボタンからCSVファイルを選択してください';
+                    document.getElementById('loadingStatus').style.color = '#e65100';
+                    document.getElementById('uploadArea').style.display = 'block';
+                });
+        };
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                processBuffer(e.target.result);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processBuffer(buffer) {
+            let text = '';
+            try {
+                const decoder = new TextDecoder('utf-8', { fatal: true });
+                text = decoder.decode(buffer);
+            } catch (e) {
+                const decoder = new TextDecoder('shift_jis');
+                text = decoder.decode(buffer);
+            }
+            const parsed = parseCSV(text);
+            spotData = parsed.data;
+            document.getElementById('loadingStatus').innerText = `データ読み込み完了 (${spotData.length}件)`;
+            document.getElementById('loadingStatus').style.color = '#27ae60';
+            document.getElementById('uploadArea').style.display = 'none';
+        }
+
+        function openUnchikuDialog() {
+            const season = document.querySelector('input[name="season"]:checked').value;
+            const col = document.querySelector('input[name="col"]:checked').value;
+            const row = document.querySelector('input[name="row"]:checked').value;
+            const cellVal = col + row;
+            const errorArea = document.getElementById('errorArea');
+            errorArea.innerText = '';
+
+            if (cellVal === 'A1' || cellVal === 'G7') {
+                errorArea.innerText = `【${cellVal}】はスタート/ゴール等の特殊マスのため、名所うんちくはありません。`;
+                return;
+            }
+            if (spotData.length === 0) {
+                errorArea.innerText = 'CSVファイルが読み込まれていません。';
+                return;
+            }
+
+            const seasonKey = Object.keys(spotData[0]).find(k => k.includes('季節') || k.toLowerCase().includes('season'));
+            const cellKey = Object.keys(spotData[0]).find(k => k.includes('セル') || k.includes('位置') || k.toLowerCase().includes('cell'));
+
+            const targetSeason = normalizeStr(season);
+            const targetCell = normalizeStr(cellVal);
+
+            const spot = spotData.find(d => {
+                const dSeason = normalizeStr(d[seasonKey]);
+                const dCell = normalizeStr(d[cellKey]);
+                return dSeason.includes(targetSeason) && dCell === targetCell;
+            });
+
+            if (!spot) {
+                errorArea.innerText = `季節「${season}」、セル「${cellVal}」に該当するスポットが見つかりませんでした。`;
+                return;
+            }
+
+            document.getElementById('modalCellTag').innerText = `[${season}-${cellVal}]`;
+            document.getElementById('modalSpotName').innerText = spot['名称'] || spot['name'] || '名称不明';
+            document.getElementById('modalSpotDesc').innerText = spot['説明文'] || spot['description'] || spot['説明'] || '説明文がありません。';
+
+            // うんちくランダム選定
+            const unchikuList = [];
+            if (spot['うんちく1']) unchikuList.push(spot['うんちく1']);
+            if (spot['うんちく2']) unchikuList.push(spot['うんちく2']);
+            if (spot['うんちく3']) unchikuList.push(spot['うんちく3']);
+            
+            let selectedUnchiku = 'うんちくデータがありません。';
+            if (unchikuList.length > 0) {
+                const randIndex = Math.floor(Math.random() * unchikuList.length);
+                selectedUnchiku = unchikuList[randIndex];
+            }
+            document.getElementById('modalSpotUnchiku').innerText = selectedUnchiku;
+
+            // --- 新規: みやたんポイント判定ロジック (乱数 1〜100) ---
+            const randMp = Math.floor(Math.random() * 100) + 1; // 1〜100
+            let mpMessage = '';
+            let mpClass = '';
+
+            if (randMp === 100) {
+                mpMessage = 'もっているみやたんポイント(MP)を全部 他の人に分配し、端数没収';
+                mpClass = 'mp-lose';
+            } else if (randMp >= 95 && randMp <= 99) {
+                mpMessage = 'もっているみやたんポイント(MP)をすべて没収';
+                mpClass = 'mp-lose';
+            } else if (randMp >= 1 && randMp <= 10) {
+                const losePt = -randMp;
+                mpMessage = `MPを ${losePt} ポイント取得（${randMp}ポイント没収）`;
+                mpClass = 'mp-lose';
+            } else {
+                const gainPt = Math.floor(randMp / 10) - 1;
+                if (gainPt > 0) {
+                    mpMessage = `MPを ${gainPt} ポイント取得！`;
+                    mpClass = 'mp-gain';
+                } else {
+                    mpMessage = `MPを ${gainPt} ポイント取得（変動なし）`;
+                    mpClass = 'mp-neutral';
+                }
+            }
+
+            const mpResultEl = document.getElementById('modalMpResult');
+            mpResultEl.innerText = mpMessage;
+            mpResultEl.className = 'mp-text ' + mpClass;
+
+            const lat = spot['緯度'] || spot['latitude'] || spot['lat'] || '';
+            const lng = spot['経度'] || spot['longitude'] || spot['lng'] || spot['lon'] || '';
+            const mapBtn = document.getElementById('modalMapBtn');
+            if (lat && lng) {
+                mapBtn.href = `https://www.google.com/maps?q=${lat},${lng}&z=18`;
+                mapBtn.style.display = 'inline-block';
+            } else {
+                mapBtn.style.display = 'none';
+            }
+
+            document.getElementById('unchikuModal').style.display = 'flex';
+        }
+
+        function closeUnchikuDialog() {
+            document.getElementById('unchikuModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
