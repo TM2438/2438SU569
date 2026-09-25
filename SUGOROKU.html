@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>西宮すごろく - スポット検索</title>
+    <title>にしのみやすごろく</title>
     <style>
         body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; background-color: #f7f9fc; margin: 0; padding: 15px; color: #333; }
         .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 20px 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -77,7 +77,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>西宮すごろく クイック参照</h1>
+        <h1>にしのみやすごろく</h1>
         <div id="loadingStatus" class="status">データを読み込み中...</div>
 
         <div id="uploadArea" class="file-upload-area" style="display: none;">
@@ -252,10 +252,6 @@
             const errorArea = document.getElementById('errorArea');
             errorArea.innerText = '';
 
-            if (cellVal === 'A1' || cellVal === 'G7') {
-                errorArea.innerText = `【${cellVal}】はスタート/ゴール等の特殊マスのため、名所うんちくはありません。`;
-                return;
-            }
             if (spotData.length === 0) {
                 errorArea.innerText = 'CSVファイルが読み込まれていません。';
                 return;
