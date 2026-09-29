@@ -56,6 +56,10 @@
         .btn-close:hover { background-color: #7f8c8d; }
         .btn-map { background-color: #4caf50; color: white; }
         .btn-map:hover { background-color: #388e3c; }
+        
+        /* ルビ（ふりがな）のスタイル調整 */
+        ruby { ruby-align: center; }
+        rt { font-size: 10px; color: #555; }
 
         @media screen and (max-width: 600px) {
             body { padding: 10px; }
@@ -150,6 +154,9 @@
 
     <script>
         let spotData = [];
+        
+        // 読み上げや表示切り替えのために、現在選択されている生テキストを保持する変数
+        let currentSpotRaw = { name: '', desc: '', unchiku: '' };
 
         function normalizeStr(str) {
             if (!str) return '';
@@ -159,7 +166,6 @@
             return halfStr.replace(/\s+/g, '').toUpperCase();
         }
 
-        // 列名が変わっても対応できるように柔軟にキーを取得する関数
         function findKey(obj, keywords) {
             const keys = Object.keys(obj);
             for (let keyword of keywords) {
@@ -206,7 +212,6 @@
         }
 
         window.onload = function() {
-            // 新フォーマットのCSVファイルを読み込む
             fetch('7x7_Landmarks_With_Photo.csv')
                 .then(response => {
                     if (!response.ok) throw new Error('自動読み込みスキップ');
@@ -246,6 +251,19 @@
             document.getElementById('uploadArea').style.display = 'none';
         }
 
+        // --- ルビ（ふりがな）変換用の関数 ---
+        // 画面表示用：「漢字《ふりがな》」を <ruby> タグに変換する
+        function formatForDisplay(text) {
+            if (!text) return '';
+            return text.replace(/([一-龥々]+)《([^》]+)》/g, '<ruby>$1<rt>$2</rt></ruby>');
+        }
+        
+        // 音声読み上げ用：「漢字《ふりがな》」から「ふりがな」だけを抽出する
+        function formatForSpeech(text) {
+            if (!text) return '';
+            return text.replace(/([一-龥々]+)《([^》]+)》/g, '$2');
+        }
+
         function openUnchikuDialog() {
             const season = document.querySelector('input[name="season"]:checked').value;
             const col = document.querySelector('input[name="col"]:checked').value;
@@ -282,8 +300,9 @@
             const nameKey = findKey(spot, ['名称', 'name', 'タイトル']) || Object.keys(spot)[3];
             const descKey = findKey(spot, ['説明文', 'description', '説明', '詳細']);
             
-            document.getElementById('modalSpotName').innerText = spot[nameKey] || '名称不明';
-            document.getElementById('modalSpotDesc').innerText = descKey ? (spot[descKey] || '説明文がありません。') : '説明文がありません。';
+            // 生テキストを変数に保持
+            currentSpotRaw.name = spot[nameKey] || '名称不明';
+            currentSpotRaw.desc = descKey ? (spot[descKey] || '説明文がありません。') : '説明文がありません。';
 
             // うんちく ＆ 写真キーワードのランダム選定
             const unchikuList = [];
@@ -296,26 +315,28 @@
             const up2Key = findKey(spot, ['うんちく写真2', 'photo2']);
             const up3Key = findKey(spot, ['うんちく写真3', 'photo3']);
             
-            // テキストと写真キーワードをセットにして配列に格納
             if (u1Key && spot[u1Key]) unchikuList.push({ text: spot[u1Key], photoKw: (up1Key && spot[up1Key] ? spot[up1Key] : '') });
             if (u2Key && spot[u2Key]) unchikuList.push({ text: spot[u2Key], photoKw: (up2Key && spot[up2Key] ? spot[up2Key] : '') });
             if (u3Key && spot[u3Key]) unchikuList.push({ text: spot[u3Key], photoKw: (up3Key && spot[up3Key] ? spot[up3Key] : '') });
             
-            let selectedUnchiku = 'うんちくデータがありません。';
+            currentSpotRaw.unchiku = 'うんちくデータがありません。';
             let selectedPhotoKw = '';
             
             if (unchikuList.length > 0) {
                 const randIndex = Math.floor(Math.random() * unchikuList.length);
-                selectedUnchiku = unchikuList[randIndex].text;
+                currentSpotRaw.unchiku = unchikuList[randIndex].text;
                 selectedPhotoKw = unchikuList[randIndex].photoKw;
             }
-            document.getElementById('modalSpotUnchiku').innerText = selectedUnchiku;
 
-            // 写真検索ボタンのリンク生成
+            // 画面表示用にルビ付きHTMLへ変換してセット（innerText ではなく innerHTML を使用）
+            document.getElementById('modalSpotName').innerHTML = formatForDisplay(currentSpotRaw.name);
+            document.getElementById('modalSpotDesc').innerHTML = formatForDisplay(currentSpotRaw.desc);
+            document.getElementById('modalSpotUnchiku').innerHTML = formatForDisplay(currentSpotRaw.unchiku);
+
+            // 写真検索ボタンのリンク生成（キーワード検索特化）
             const photoBtn = document.getElementById('modalPhotoBtn');
             const searchQuery = `西宮 ${selectedPhotoKw}`.trim().replace(/\s+/g, ' ');
             
-            // 写真キーワードが存在する場合のみボタンを表示
             if (selectedPhotoKw) {
                 photoBtn.href = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(searchQuery)}`;
                 photoBtn.style.display = 'inline-block';
@@ -367,7 +388,7 @@
             document.getElementById('unchikuModal').style.display = 'flex';
         }
 
-        // 音声読み上げ（誤読防止のために平仮名化）
+        // 音声読み上げロジック
         function speakSpotInfo() {
             if (!('speechSynthesis' in window)) {
                 alert('お使いのブラウザは音声読み上げに対応していません。');
@@ -375,11 +396,12 @@
             }
             window.speechSynthesis.cancel();
             
-            const spotName = document.getElementById('modalSpotName').innerText;
-            const spotDesc = document.getElementById('modalSpotDesc').innerText;
-            const spotUnchiku = document.getElementById('modalSpotUnchiku').innerText;
+            // 漢字を消去し、指定された《ふりがな》だけを抽出
+            const spotName = formatForSpeech(currentSpotRaw.name);
+            const spotDesc = formatForSpeech(currentSpotRaw.desc);
+            const spotUnchiku = formatForSpeech(currentSpotRaw.unchiku);
             
-            // 漢字の「名」や「説明」の誤読を避けるために平仮名を使用
+            // 枠組みの定型文も平仮名にして誤読を防止
             const textToSpeak = `スポットめい。${spotName}。。せつめい。${spotDesc}。。うんちく。${spotUnchiku}`;
             
             const utterance = new SpeechSynthesisUtterance(textToSpeak);
