@@ -155,6 +155,9 @@
     <script>
         let spotData = [];
         
+        // デバッグ用：うんちく表示カウンター（起動時は0からスタート）
+        let unchikuCounter = 0;
+        
         // 読み上げや表示切り替えのために、現在選択されている生テキストを保持する変数
         let currentSpotRaw = { name: '', desc: '', unchiku: '' };
 
@@ -304,7 +307,7 @@
             currentSpotRaw.name = spot[nameKey] || '名称不明';
             currentSpotRaw.desc = descKey ? (spot[descKey] || '説明文がありません。') : '説明文がありません。';
 
-            // うんちく ＆ 写真キーワードのランダム選定
+            // うんちく ＆ 写真キーワードの選定（内部で1->2->3の順繰り表示）
             const unchikuList = [];
             
             const u1Key = findKey(spot, ['うんちく1', 'trivia1']);
@@ -323,12 +326,16 @@
             let selectedPhotoKw = '';
             
             if (unchikuList.length > 0) {
-                const randIndex = Math.floor(Math.random() * unchikuList.length);
-                currentSpotRaw.unchiku = unchikuList[randIndex].text;
-                selectedPhotoKw = unchikuList[randIndex].photoKw;
+                // 1, 2, 3, 1, 2, 3 の順で選定
+                const index = unchikuCounter % unchikuList.length;
+                currentSpotRaw.unchiku = unchikuList[index].text;
+                selectedPhotoKw = unchikuList[index].photoKw;
+                
+                // カウンターをインクリメント
+                unchikuCounter++;
             }
 
-            // 画面表示用にルビ付きHTMLへ変換してセット（innerText ではなく innerHTML を使用）
+            // 画面表示用にルビ付きHTMLへ変換してセット
             document.getElementById('modalSpotName').innerHTML = formatForDisplay(currentSpotRaw.name);
             document.getElementById('modalSpotDesc').innerHTML = formatForDisplay(currentSpotRaw.desc);
             document.getElementById('modalSpotUnchiku').innerHTML = formatForDisplay(currentSpotRaw.unchiku);
