@@ -69,6 +69,14 @@
             border-color: #2ecc71;
             background: #f0fdf4;
         }
+        .version-card.download {
+            border-color: #e67e22;
+            background: #fff8f1;
+        }
+        .version-card.download:hover {
+            border-color: #d35400;
+            box-shadow: 0 4px 12px rgba(230, 126, 34, 0.15);
+        }
         .version-card.disabled {
             opacity: 0.6;
             pointer-events: none;
@@ -87,6 +95,9 @@
         }
         .tag.rule-tag {
             background: #2ecc71;
+        }
+        .tag.download-tag {
+            background: #e67e22;
         }
         .tag.dev {
             background: #e67e22;
@@ -182,7 +193,7 @@
         <h1>🗺️ 西宮すごろく</h1>
         <p class="subtitle">メニューを選択してください</p>
 
-<div class="version-list">
+        <div class="version-list">
             <!-- ルールブック表示ボタン -->
             <div class="version-card rule" onclick="openRuleModal()">
                 <span class="tag rule-tag">ガイド</span>
@@ -191,12 +202,20 @@
                 <span class="arrow">➔</span>
             </div>
 
-            <!-- 現行アプリ（SUGOROKU.html）へのリンク -->
+            <!-- 現行アプリ（SUGOROKU_V2.html）へのリンク -->
             <a href="SUGOROKU_V2.html" class="version-card primary">
                 <span class="tag">最新版</span>
                 <div class="version-title">📱 [にしのみやすごろく]アプリ (Ver 2.0)</div>
                 <div class="version-desc">音声読み上げ機能・画像検索機能対応</div>
                 <span class="arrow">➔</span>
+            </a>
+
+            <!-- 補足資料ZIPダウンロードリンク -->
+            <a href="西宮すごろく補足.zip" download="西宮すごろく補足.zip" class="version-card download">
+                <span class="tag download-tag">ダウンロード</span>
+                <div class="version-title">📦 西宮すごろく補足資料 (ZIP)</div>
+                <div class="version-desc">すごろくボードなど、自宅で遊ぶための資料があります</div>
+                <span class="arrow">⬇</span>
             </a>
         </div>
         
