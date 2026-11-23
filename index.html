@@ -223,7 +223,7 @@
             const content = document.getElementById('ruleContent');
             modal.style.display = 'flex';
 
-            fetch('00_ルールブック.md')
+            fetch('00_ルールブック_V01.03.md')
                 .then(response => {
                     if (!response.ok) throw new Error('ルールブックファイルが見つかりません。');
                     return response.text();

@@ -255,16 +255,18 @@
         }
 
         // --- ルビ（ふりがな）変換用の関数 ---
-        // 画面表示用：「漢字《ふりがな》」を <ruby> タグに変換する
+
+        // 画面表示用：「漢字から始まり、ヶや送り仮名を含む塊《ふりがな》」を <ruby> タグに変換する
         function formatForDisplay(text) {
             if (!text) return '';
-            return text.replace(/([一-龥々]+)《([^》]+)》/g, '<ruby>$1<rt>$2</rt></ruby>');
+            // 必ず漢字/ヶ/ヵで始まり、間に挟まれたひらがなや末尾の送り仮名のみを含める
+            return text.replace(/([一-龥々ヶヵ]+(?:[ぁ-ん]+[一-龥々ヶヵ]+)*[ぁ-ん]*)《([^》]+)》/g, '<ruby>$1<rt>$2</rt></ruby>');
         }
-        
-        // 音声読み上げ用：「漢字《ふりがな》」から「ふりがな」だけを抽出する
+
+        // 音声読み上げ用：漢字＋送り仮名の塊全体を「ふりがな」だけに置き換える（地の文の助詞は残す）
         function formatForSpeech(text) {
             if (!text) return '';
-            return text.replace(/([一-龥々]+)《([^》]+)》/g, '$2');
+            return text.replace(/([一-龥々ヶヵ]+(?:[ぁ-ん]+[一-龥々ヶヵ]+)*[ぁ-ん]*)《([^》]+)》/g, '$2');
         }
 
         function openUnchikuDialog() {
